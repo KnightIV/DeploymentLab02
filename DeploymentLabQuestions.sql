@@ -133,17 +133,31 @@ may not hard code the supplierid or categoryid on your insert commands.
 Hard coding could break in databases that have already used the value 
 you hard code for a different row.
 */
+declare @SupplierID as int;
+set @SupplierID = (select supplierid from Suppliers where companyname = 'The Spice Supplier')
+
+declare @CategoryID as int;
+set @CategoryID = (select categoryid from Categories where categoryname = 'Spices')
+
 if not exists (Select * from Products Where productname = 'Cinnamon')
-	begin 
+	begin
+		insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+		values('Cinnamon', @SupplierID, @CategoryID, 2.00, 0)
 	end
 if not exists (Select * from Products Where productname = 'Paprika')
 	begin
+		insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+		values('Paprika', @SupplierID, @CategoryID, 3.00, 0)
 	end
 if not exists (Select * from Products Where productname = 'Cayenne Pepper')
-	begin 
+	begin
+		insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+		values('Cayenne Pepper', @SupplierID, @CategoryID, 2.50, 0)
 	end
 if not exists (Select * from Products Where productname = 'Bay Leaves')
 	begin
+		insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+		values('Bay Leaves', @SupplierID, @CategoryID, 2.75, 0)
 	end
 
 /* 3.4
@@ -162,6 +176,7 @@ if COL_LENGTH('products', 'Organic') is null
 		alter table products
 		add Organic bit default(0)
 	end
+
 /* 4.2
 Only the following suppliers provide organic goods, and all the products
 they supply are organic.  Update the products table so the entire table
