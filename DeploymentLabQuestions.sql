@@ -238,12 +238,32 @@ begin tran
 	create trigger tr_Products_Insert
 	on Products for insert, update
 	as
-		if ((select modUser from inserted) is null)
+		declare @AddedDate date = (select addDate from inserted);
+		declare @InsertedID int = (select productid from inserted);
+		
+		if ((select addUser from inserted) is null)
 			begin
-				print 'modUser cannot be null'
+				print 'addUser cannot be null'
 				rollback tran;
 			end
 
+		if ((select addDate from inserted) is null)
+			begin
+				print 'addDate cannot be null'
+				rollback tran;
+			end
+
+		if ((select addDate from inserted) != (select addDate from Products where productid = @InsertedID))
+			begin
+				print 'addDate may not be modified once inserted'
+				rollback tran;
+			end
+
+		if ((select addUser from inserted) != (select addUser from Products where productid = @InsertedID))
+			begin
+				print 'addUser may not be modified once inserted'
+				rollback tran;
+			end
 	go
 
 	/* 6.1
@@ -258,4 +278,4 @@ begin tran
 		Select * from Products
 		where modDate >= @firstDate and modDate <= @secondDate
 	go
-end tran
+commit tran
