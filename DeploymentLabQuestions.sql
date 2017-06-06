@@ -105,6 +105,7 @@ begin tran
 				'Katy','USA', '333-867-5309')
 		end
 
+
 	/* 3.3
 	Add the following products under the spices category if they have not already
 	been added:
