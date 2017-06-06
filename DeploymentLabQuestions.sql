@@ -165,16 +165,43 @@ A different update script may have incorrectly added these new products under su
 Ensure that when your full script is complete the supplier for these
 4 new products is accurate (you can use multiple commands to do so).
 */
+if ((select supplierid from Products where productname = 'Cinnamon') != @SupplierID)
+	begin
+		update Products
+		set supplierid = @SupplierID
+		where productname = 'Cinnamon'
+	end
+
+if ((select supplierid from Products where productname = 'Paprika') != @SupplierID)
+	begin
+		update Products
+		set supplierid = @SupplierID
+		where productname = 'Paprika'
+	end
+
+if ((select supplierid from Products where productname = 'Cayenne Pepper') != @SupplierID)
+	begin
+		update Products
+		set supplierid = @SupplierID
+		where productname = 'Cayenne Pepper'
+	end
+
+if ((select supplierid from Products where productname = 'Bay Leaves') != @SupplierID)
+	begin
+		update Products
+		set supplierid = @SupplierID
+		where productname = 'Bay Leaves'
+	end
 
 
 /* 4.1
 If it has not already been added, add a bit column named Organic to the
 Products table.  The default for this column is 0.
 */
-if COL_LENGTH('products', 'Organic') is null
-	begin
-		alter table products
-		add Organic bit default(0)
+if not exists (Select * from sys.columns Where Name = N'Organic')
+	begin 
+		alter table Products
+			ADD Organic bit default 0 Not Null; 
 	end
 
 /* 4.2
@@ -192,8 +219,6 @@ Supplier GQRCV
 */
 
 
-
-
 /* 5.1
 Add addDate, addUser, modDate, modUser fields to the Products table.
 These are the "audit fields" referred to in subsequent questions.
@@ -209,6 +234,7 @@ alter table products
 
 alter table products
 	add modUser int;
+
 /* 5.2
 Add an audit trigger to the Products table.
 
@@ -216,10 +242,19 @@ An audit trigger will keep the four audit fields from Q5.1 accurate regardless
 of what a user tries to set them to.
 
 The audit trigger will handle inserts and updates, but do nothing on deletes.
-
 */
+go 
 
+create trigger tr_Products_Insert
+on Products for insert, update
+as
+	if ((select modUser from inserted) is null)
+		begin
+			print 'modUser cannot be null'
+			rollback tran;
+		end
 
+go
 
 /* 6.1
 Create a stored procedure that returns the products
