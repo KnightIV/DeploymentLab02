@@ -51,7 +51,8 @@ differences described in each question.
 
 
 **********************************************************************************/
-set xact_abort on 
+use DeploymentC
+
 begin tran
 	/* 1.1
 	Remove the following tables from the database, if they exist:
@@ -59,20 +60,36 @@ begin tran
 		OrderDetailsBU
 		OrderDetailsBU2
 	*/
-	if exists (select * from sys.tables where name = 'CustomersBU')
-		begin
-			drop table CustomersBU;
-		end
+	begin try
+		if exists (select * from sys.tables where name = 'CustomersBU')
+			begin
+				drop table CustomersBU;
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	if exists (select * from sys.tables where name = 'OrderDetailsBU')
-		begin
-			drop table CustomersBU;
-		end
+	begin try
+		if exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'OrderDetailsBU')
+			begin
+				drop table OrderDetailsBU;
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+		begin tran;
+	end catch
 
-	if exists (select * from sys.tables where name = 'OrderDetailsBU2')
-		begin
-			drop table CustomersBU;
-		end
+	begin try
+		if exists (select * from sys.tables where name = 'OrderDetailsBU2')
+			begin
+				drop table OrderDetailsBU2;
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
 	/* 2.1
 	Testing data was mistakenly pushed out to production.  All data for any customer
@@ -80,31 +97,47 @@ begin tran
 	from production databases.  Ensure all data associated with these customers
 	is removed from the database.
 	*/
-	delete from Customers
-	where custid > 10000
+	begin try
+		delete from Customers
+		where custid > 10000
+	end try
+	begin catch
+		rollback tran; begin tran;
+		begin tran;
+	end catch
+
 
 	/* 3.1
 	If it has not already been added, add a new category to the Categories 
 	table called Spices.
 	*/
-	if not exists (Select * from Categories Where categoryname = 'Spices')
-		begin
-			insert into Categories(categoryname, description)
-			Values ('Spices', 'Stuff that makes your food taste good')
-		end;
+	begin try
+		if not exists (Select * from Categories Where categoryname = 'Spices')
+			begin
+				insert into Categories(categoryname, description)
+				Values ('Spices', 'Stuff that makes your food taste good')
+			end;
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
 	/* 3.2
 	If it has not already been added, add a new supplier called "The Spice
 	Supplier".  Use appropriate values for all other columns in the new record.
 	*/
-	if not exists (select * from Suppliers where companyname = 'The Spice Supplier')
-		begin
-			insert into Suppliers(companyname, contactname, contacttitle, [address],
-				city, country, phone)
-			values('The Spice Supplier', 'Matt Damon', 'Spicy Director', '2403 Davenmoor Dr.', 
-				'Katy','USA', '333-867-5309')
-		end
-
+	begin try
+		if not exists (select * from Suppliers where companyname = 'The Spice Supplier')
+			begin
+				insert into Suppliers(companyname, contactname, contacttitle, [address],
+					city, country, phone)
+				values('The Spice Supplier', 'Matt Damon', 'Spicy Director', '2403 Davenmoor Dr.', 
+					'Katy','USA', '333-867-5309')
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
 	/* 3.3
 	Add the following products under the spices category if they have not already
@@ -119,76 +152,139 @@ begin tran
 	Hard coding could break in databases that have already used the value 
 	you hard code for a different row.
 	*/
-	declare @SupplierID as int;
-	set @SupplierID = (select supplierid from Suppliers where companyname = 'The Spice Supplier')
+	begin try
+		declare @SupplierID as int;
+		set @SupplierID = (select supplierid from Suppliers where companyname = 'The Spice Supplier')
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	declare @CategoryID as int;
-	set @CategoryID = (select categoryid from Categories where categoryname = 'Spices')
+	begin try
+		declare @CategoryID as int;
+		set @CategoryID = (select categoryid from Categories where categoryname = 'Spices')
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	if not exists (Select * from Products Where productname = 'Cinnamon')
-		begin
-			insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
-			values('Cinnamon', @SupplierID, @CategoryID, 2.00, 0)
-		end
-	if not exists (Select * from Products Where productname = 'Paprika')
-		begin
-			insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
-			values('Paprika', @SupplierID, @CategoryID, 3.00, 0)
-		end
-	if not exists (Select * from Products Where productname = 'Cayenne Pepper')
-		begin
-			insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
-			values('Cayenne Pepper', @SupplierID, @CategoryID, 2.50, 0)
-		end
-	if not exists (Select * from Products Where productname = 'Bay Leaves')
-		begin
-			insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
-			values('Bay Leaves', @SupplierID, @CategoryID, 2.75, 0)
-		end
+	begin try
+		if not exists (Select * from Products Where productname = 'Cinnamon')
+			begin
+				insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+				values('Cinnamon', @SupplierID, @CategoryID, 2.00, 0)
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	begin try
+		if not exists (Select * from Products Where productname = 'Paprika')
+			begin
+				insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+				values('Paprika', @SupplierID, @CategoryID, 3.00, 0)
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	begin try
+		if not exists (Select * from Products Where productname = 'Cayenne Pepper')
+			begin
+				insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+				values('Cayenne Pepper', @SupplierID, @CategoryID, 2.50, 0)
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	begin try
+		if not exists (Select * from Products Where productname = 'Bay Leaves')
+			begin
+				insert into Products(productname, supplierid, categoryid, unitprice, discontinued)
+				values('Bay Leaves', @SupplierID, @CategoryID, 2.75, 0)
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
 
 	/* 3.4
 	A different update script may have incorrectly added these new products under supplierid 1.  
 	Ensure that when your full script is complete the supplier for these
 	4 new products is accurate (you can use multiple commands to do so).
 	*/
-	if ((select supplierid from Products where productname = 'Cinnamon') != @SupplierID)
-		begin
-			update Products
-			set supplierid = @SupplierID
-			where productname = 'Cinnamon'
-		end
+	begin try
+		if ((select supplierid from Products where productname = 'Cinnamon') != @SupplierID)
+			begin
+				update Products
+				set supplierid = @SupplierID
+				where productname = 'Cinnamon'
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	if ((select supplierid from Products where productname = 'Paprika') != @SupplierID)
-		begin
-			update Products
-			set supplierid = @SupplierID
-			where productname = 'Paprika'
-		end
+	begin try
+		if ((select supplierid from Products where productname = 'Paprika') != @SupplierID)
+			begin
+				update Products
+				set supplierid = @SupplierID
+				where productname = 'Paprika'
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	if ((select supplierid from Products where productname = 'Cayenne Pepper') != @SupplierID)
-		begin
-			update Products
-			set supplierid = @SupplierID
-			where productname = 'Cayenne Pepper'
-		end
+	begin try
+		if ((select supplierid from Products where productname = 'Cayenne Pepper') != @SupplierID)
+			begin
+				update Products
+				set supplierid = @SupplierID
+				where productname = 'Cayenne Pepper'
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	if ((select supplierid from Products where productname = 'Bay Leaves') != @SupplierID)
-		begin
-			update Products
-			set supplierid = @SupplierID
-			where productname = 'Bay Leaves'
-		end
-
+	begin try
+		if ((select supplierid from Products where productname = 'Bay Leaves') != @SupplierID)
+			begin
+				update Products
+				set supplierid = @SupplierID
+				where productname = 'Bay Leaves'
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
 	/* 4.1
 	If it has not already been added, add a bit column named Organic to the
 	Products table.  The default for this column is 0.
 	*/
-	if not exists (Select * from sys.columns Where Name = N'Organic')
-		begin 
-			alter table Products
-				ADD Organic bit default 0 Not Null; 
-		end
+	
+	go
+
+	begin try
+		if (Select count(*) from sys.columns Where Name = N'Organic') = 0
+			begin 
+				alter table Products
+					ADD Organic bit default 0 Not Null; 
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	go
 
 	/* 4.2
 	Only the following suppliers provide organic goods, and all the products
@@ -203,28 +299,75 @@ begin tran
 	Supplier GQRCV
 
 	*/
-	Update Products
-	set Organic = 1
-	where Products.supplierid in (select supplierID from Suppliers 
-								where companyname in ('Supplier CIYNM', 
-								'Supplier EQPNC', 'Supplier ZRYDZ',
-								'Supplier ZPYVS','Supplier BWGYE','Supplier GQRCV'));
+	begin try
+		Update Products
+		set Organic = 1
+		where Products.supplierid in (select supplierID from Suppliers 
+									where companyname in ('Supplier CIYNM', 
+									'Supplier EQPNC', 'Supplier ZRYDZ',
+									'Supplier ZPYVS','Supplier BWGYE','Supplier GQRCV'));
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
 	/* 5.1
 	Add addDate, addUser, modDate, modUser fields to the Products table.
 	These are the "audit fields" referred to in subsequent questions.
 	*/
-	alter table products
-		add addDate date;
+	go
 
-	alter table products
-		add addUser int;
+	begin try
+		if not exists (select * from sys.columns where name = N'addDate')
+		begin
+			alter table products
+				add addDate date;
+		end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
 
-	alter table products
-		add modDate date;
+	go
 
-	alter table products
-		add modUser int;
+	begin try
+		if not exists (select * from sys.columns where name = N'addUser')
+		begin
+			alter table products
+				add addUser int;
+		end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	go
+
+	begin try
+		if not exists (select * from sys.columns where name = N'modDate')
+		begin
+			alter table products
+				add modDate date;
+		end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	go
+
+	begin try
+		if not exists (select * from sys.columns where name = N'modUser')
+		begin
+			alter table products
+				add modUser int;
+		end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
+	go
 
 	/* 5.2
 	Add an audit trigger to the Products table.
@@ -234,36 +377,55 @@ begin tran
 
 	The audit trigger will handle inserts and updates, but do nothing on deletes.
 	*/
+	go
+	
+	begin try
+		if (select count(*) from sys.triggers where name = 'tr_Products_Insert') > 0
+			begin
+				drop trigger tr_Products_Insert;
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
 	go 
 
 	create trigger tr_Products_Insert
 	on Products for insert, update
 	as
-		declare @AddedDate date = (select addDate from inserted);
-		declare @InsertedID int = (select productid from inserted);
-		
-		if ((select addUser from inserted) is null)
-			begin
-				print 'addUser cannot be null'
-				rollback tran;
-			end
+		declare @CurProdID int = (select min(productid) from inserted);
 
-		if ((select addDate from inserted) is null)
+		while @CurProdID <= (select max(productid) from inserted)
 			begin
-				print 'addDate cannot be null'
-				rollback tran;
-			end
+				declare @AddedDate date = (select addDate from inserted);
 
-		if ((select addDate from inserted) != (select addDate from Products where productid = @InsertedID))
-			begin
-				print 'addDate may not be modified once inserted'
-				rollback tran;
-			end
+				if ((select addUser from inserted) is null)
+					begin
+						print '';
+						throw 51000, 'addUser cannot be null', 10;
+					end
 
-		if ((select addUser from inserted) != (select addUser from Products where productid = @InsertedID))
-			begin
-				print 'addUser may not be modified once inserted'
-				rollback tran;
+				if ((select addDate from inserted) is null)
+					begin
+						print '';
+						throw 51001, 'addDate cannot be null', 10;
+					end
+
+				if ((select addDate from inserted where productid = @CurProdID) != 
+									(select addDate from Products where productid = @CurProdID))
+					begin
+						print '';
+						throw 52000, 'addDate cannot be modified once inserted', 10;
+					end
+
+				if ((select addUser from inserted where productid = @CurProdID) != 
+									(select addUser from Products where productid = @CurProdID))
+					begin
+						print '';
+						throw 52001, 'addUser cannot be modified once inserted', 10;
+					end
+				set @CurProdID = @CurProdID + 1;
 			end
 	go
 
@@ -271,12 +433,24 @@ begin tran
 	Create a stored procedure that returns the products
 	whose data changed between a date range specified by parameters.
 	*/
+	begin try
+		if (select count(*) from sys.procedures where name = 'dateRange') > 0
+			begin
+				drop procedure dateRange
+			end
+	end try
+	begin catch
+		rollback tran; begin tran;
+	end catch
+
 	go
+
 	create procedure dateRange
 		@firstDate date,
 		@secondDate date
 	as
 		Select * from Products
 		where modDate >= @firstDate and modDate <= @secondDate
+
 	go
-commit tran
+commit tran;
