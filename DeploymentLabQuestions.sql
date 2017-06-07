@@ -51,8 +51,6 @@ differences described in each question.
 
 
 **********************************************************************************/
-use DeploymentC
-
 begin tran
 	/* 1.1
 	Remove the following tables from the database, if they exist:
@@ -61,7 +59,7 @@ begin tran
 		OrderDetailsBU2
 	*/
 	begin try
-		if exists (select * from sys.tables where name = 'CustomersBU')
+		if exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'CustomersBU')
 			begin
 				drop table CustomersBU;
 			end
@@ -82,7 +80,7 @@ begin tran
 	end catch
 
 	begin try
-		if exists (select * from sys.tables where name = 'OrderDetailsBU2')
+		if exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'OrderDetailsBU2')
 			begin
 				drop table OrderDetailsBU2;
 			end
@@ -103,7 +101,6 @@ begin tran
 	end try
 	begin catch
 		rollback tran; begin tran;
-		begin tran;
 	end catch
 
 
